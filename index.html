@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
+  <link rel="manifest" href="manifest.json">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(function(registration) {
+            console.log('ServiceWorker مسجل:', registration);
+          }, function(err) {
+            console.log('فشل تسجيل ServiceWorker:', err);
+          });
+      });
+    }
+  </script>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>تقويم حجز شاليه سانتوريني</title>
