@@ -189,6 +189,15 @@ body.rest3-bg::before {
   <div id="monthLabel"></div>
   <button onclick="changeMonth(1)">التالي</button>
 </div>
+<div class="days-row" style="display: grid; grid-template-columns: repeat(7, 1fr); width: calc(100% - 20px); max-width: 400px; text-align: center; font-weight: bold; margin-top: 10px;">
+  <div>الأحد</div>
+  <div>الإثنين</div>
+  <div>الثلاثاء</div>
+  <div>الأربعاء</div>
+  <div>الخميس</div>
+  <div>الجمعة</div>
+  <div>السبت</div>
+</div>
 <div class="calendar" id="calendar"></div>
 <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
   <button id="expensesButton" onclick="openExpenses()" style="font-size: 16px; background-color: #4682B4; color: white; padding: 10px 20px; border: none; border-radius: 12px; cursor: pointer;">
@@ -291,39 +300,46 @@ body.rest3-bg::before {
   }
 
   function renderCalendar() {
-    updateMonthLabel();
-    calendar.innerHTML = "";
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    for (let i = 0; i < firstDay; i++) calendar.appendChild(document.createElement("div"));
-    for (let d = 1; d <= daysInMonth; d++) {
-      const cell = document.createElement("div");
-      cell.className = "day";
-      const dateId = `${currentYear}-${currentMonth + 1}-${d}`;
-      cell.innerHTML = `<div class='top-number'>${d}</div>`;
-      db.collection('rests').doc(currentRest).collection('bookings').doc(dateId).get().then(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-          let count = 0;
-          if (data.from1) {
-            cell.innerHTML += `<div class='bar bar1'>${data.from1}</div>`;
-            count++;
-          }
-          if (data.from2) {
-            cell.innerHTML += `<div class='bar bar2'>${data.from2}</div>`;
-            count++;
-          }
-          if (data.stay === 'مبيت') {
-            cell.innerHTML += `<div class='bar bar3'>مبيت</div>`;
-            count++;
-          }
-          if (count === 3) cell.classList.add("full-red");
-        }
-      });
-      cell.addEventListener("click", () => openPopup(dateId));
-      calendar.appendChild(cell);
-    }
+  updateMonthLabel();
+  calendar.innerHTML = "";
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+
+  for (let i = 0; i < firstDay; i++) {
+    calendar.appendChild(document.createElement("div"));
   }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cell = document.createElement("div");
+    cell.className = "day";
+    const dateId = `${currentYear}-${currentMonth + 1}-${d}`;
+    cell.innerHTML = `<div class='top-number'>${d}</div>`;
+
+    // ضع الخلية على التقويم الآن
+    calendar.appendChild(cell);
+
+    // أضف حدث النقر الآن
+    cell.addEventListener("click", () => openPopup(dateId));
+
+    // ثم اجلب البيانات من Firestore
+    db.collection('rests').doc(currentRest).collection('bookings').doc(dateId).get().then(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+
+        if (data.from1) {
+          cell.innerHTML += `<div class='bar bar1'>${data.from1}</div>`;
+        }
+        if (data.from2) {
+          cell.innerHTML += `<div class='bar bar2'>${data.from2}</div>`;
+        }
+        if (data.stay && data.stay === 'مبيت') {
+          cell.innerHTML += `<div class='bar bar3'>مبيت</div>`;
+          cell.classList.add("full-red");
+        }
+      }
+    });
+  }
+}
 
   function changeMonth(delta) {
     currentMonth += delta;
@@ -555,11 +571,22 @@ function openReport() {
 
 
 function generateReport() {
-  const start = new Date(document.getElementById("reportStart").value);
-  const end = new Date(document.getElementById("reportEnd").value);
+  const startInput = document.getElementById("reportStart").value;
+  const endInput = document.getElementById("reportEnd").value;
   const resultsDiv = document.getElementById("reportResults");
 
-  if (!start || !end || isNaN(start) || isNaN(end)) {
+  if (!startInput || !endInput) {
+    resultsDiv.innerHTML = "يرجى اختيار فترة صالحة.";
+    return;
+  }
+
+  const startParts = startInput.split("-");
+  const endParts = endInput.split("-");
+
+  const start = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]));
+  const end = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]));
+
+  if (isNaN(start) || isNaN(end)) {
     resultsDiv.innerHTML = "يرجى اختيار فترة صالحة.";
     return;
   }
@@ -582,7 +609,7 @@ function generateReport() {
   let bookingsChecked = 0;
   let totalBookingDocs = [];
 
-  // 1. حساب المصروفات
+  // حساب المصروفات
   monthsToCheck.forEach(monthId => {
     db.collection("rests").doc(currentRest).collection("expenses")
       .doc(monthId).collection("items")
@@ -598,7 +625,7 @@ function generateReport() {
       });
   });
 
-  // 2. جمع الدخل وحساب عدد الأيام المحجوزة
+  // جمع الدخل وعدّ الأيام المحجوزة
   const allDates = [];
   const loopDate = new Date(start);
   while (loopDate <= end) {
@@ -646,7 +673,40 @@ function generateReport() {
 
 
 
+
 })();
 </script>
+
+<button id="installBtn" style="position: fixed; bottom: 20px; right: 20px; background-color: #bfa16b; color: white; padding: 10px 20px; border: none; border-radius: 12px; font-size: 16px; z-index: 9999;">📲 تحميل التطبيق</button>
+
+
+<script>
+  let deferredPrompt;
+  const installBtn = document.getElementById('installBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.style.display = 'block';
+  });
+
+  installBtn.addEventListener('click', () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(choice => {
+        if (choice.outcome === 'accepted') {
+          console.log('App installed');
+        }
+        deferredPrompt = null;
+        installBtn.style.display = 'none';
+      });
+    } else {
+      alert("لتحميل التطبيق على iPhone، اضغط على زر المشاركة ثم 'إضافة إلى الشاشة الرئيسية'.");
+    }
+  });
+
+  installBtn.style.display = 'none';
+</script>
+
 </body>
 </html>
