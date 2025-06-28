@@ -417,9 +417,9 @@ function openExpenses() {
 
 
   function saveExpense() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
+    const year = currentYear;
+    const month = currentMonth + 1;
+
 
     const type = document.getElementById("expenseType").value;
     const other = document.getElementById("otherExpense").value;
@@ -445,9 +445,9 @@ updateExpenseList();
     });
   }
 function removeExpense() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
+  const year = currentYear;
+  const month = currentMonth + 1;
+
 
   const type = document.getElementById("expenseType").value;
   const other = document.getElementById("otherExpense").value;
